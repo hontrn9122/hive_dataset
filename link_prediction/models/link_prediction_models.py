@@ -5,7 +5,7 @@ from functools import partial
 
 from sklearn.metrics import roc_auc_score, f1_score
 
-from torch_geometric.nn import Sequential, GCNConv, SAGEConv, GATConv, to_hetero
+from torch_geometric.nn import Sequential, GCNConv, SAGEConv, GATv2Conv, to_hetero
 
 import lightning as L
 
@@ -30,12 +30,12 @@ class BaseLPModel(L.LightningModule):
         for i in range(len(hidden_channels)):
             if i == 0:
                 self.layers = [
-                    (layer(in_channels, hidden_channels[i], normalize=False), 'x, edge_index -> x'),
+                    (layer(in_channels, hidden_channels[i], add_self_loops=False), 'x, edge_index -> x'),
                     activation
                 ]
             else:
                 self.layers.extend([
-                    (layer(hidden_channels[i-1], hidden_channels[i], normalize=False), 'x, edge_index -> x'),
+                    (layer(hidden_channels[i-1], hidden_channels[i], add_self_loops=False), 'x, edge_index -> x'),
                     activation
                 ])
             if batch_norm:
@@ -48,7 +48,7 @@ class BaseLPModel(L.LightningModule):
                 )
             
         self.layers.append(
-            (layer(hidden_channels[-1], out_channels, normalize=False), 'x, edge_index -> x')
+            (layer(hidden_channels[-1], out_channels, add_self_loops=False), 'x, edge_index -> x')
         )
         
         self.layers = to_hetero(Sequential('x, edge_index', self.layers), metadata)
@@ -172,7 +172,7 @@ class GraphSAGE(BaseLPModel):
         activation=nn.ReLU(),
         **kwargs
     ):
-        layer = partial(SAGEConv, aggr=aggr_scheme)
+        layer = partial(SAGEConv, aggr=aggr_scheme, normalize=False)
         super(GraphSAGE, self).__init__(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -186,7 +186,7 @@ class GraphSAGE(BaseLPModel):
         )
 
 
-class GAT(BaseLPModel):
+class GATv2(BaseLPModel):
     def __init__(
         self,
         in_channels: int,
@@ -200,8 +200,8 @@ class GAT(BaseLPModel):
         activation=nn.ReLU(),
         **kwargs
     ):
-        layer = partial(GATConv, heads=num_heads, concat=concat)
-        super(GAT, self).__init__(
+        layer = partial(GATv2Conv, heads=num_heads, concat=concat)
+        super(GATv2, self).__init__(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_channels=hidden_channels,
