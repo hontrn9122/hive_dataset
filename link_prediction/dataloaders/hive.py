@@ -48,8 +48,20 @@ def getHiveDataset(
     
     ul_edge_df = ul_edge_df.replace({"Source": map_uid, "Target": map_lid})      
     
-    data['user'] = {'x': torch.tensor(u_node_df.drop('ID', axis=1).values).float()}
-    data['link'] = {'x': torch.tensor(l_node_df.drop('ID', axis=1).values).float()}
+    data['user'] = {
+        'x': torch.tensor(u_node_df.drop('ID', axis=1).values).float(),
+        'y': torch.tensor(
+            pd.to_numeric(u_node_df['Abnormally'].replace({True:1, False:0})).fillna(0).values
+        ).long()
+    }
+    data['link'] = {
+        'x': torch.tensor(l_node_df.drop('ID', axis=1).values).float(),
+        'y': torch.tensor(
+            pd.to_numeric(l_node_df['Abnormally'].replace({True:1, False:0})).fillna(0).values
+        ).long()
+    }
+
+    
 
     for type in ul_edge_df.Type.unique():
         edge_id = np.stack([
@@ -65,13 +77,13 @@ def getHiveDataset(
                 ul_edge_df.loc[ul_edge_df.Type==type] ['TimeDifference'].values
             ], axis=1)
 
-        edge_label = pd.to_numeric(ul_edge_df.loc[ul_edge_df.Type==type]['TimeDifference']).fillna(0).values
+        edge_label = pd.to_numeric(ul_edge_df.loc[ul_edge_df.Type==type]['Abnormally'].replace({True:1, False:0})).fillna(0).values
 
         
         data['user', type.lower(), 'link']= {
-            'edge_index': torch.from_numpy(edge_id).long(),
+            'edge_index': torch.from_numpy(edge_id).int(),
             'edge_attr': torch.from_numpy(edge_attr).float(),
-            'y': torch.from_numpy(edge_label).int()
+            'y': torch.from_numpy(edge_label).long()
         }
 
     return HeteroData.from_dict(data)
