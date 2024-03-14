@@ -5,7 +5,7 @@ from functools import partial
 
 from sklearn.metrics import roc_auc_score, f1_score
 
-from torch_geometric.nn import Sequential, GCNConv, SAGEConv, GATv2Conv, to_hetero
+from torch_geometric.nn import Sequential, SAGEConv, GATConv, GATv2Conv, to_hetero
 
 import lightning as L
 
@@ -18,7 +18,7 @@ class BaseLPModel(L.LightningModule):
         out_channels: int,
         hidden_channels: list,
         metadata,
-        layer=GCNConv,
+        layer,
         batch_norm=False,
         drop_out=0.2,
         activation=nn.ReLU(),
@@ -30,12 +30,12 @@ class BaseLPModel(L.LightningModule):
         for i in range(len(hidden_channels)):
             if i == 0:
                 self.layers = [
-                    (layer(in_channels, hidden_channels[i], add_self_loops=False), 'x, edge_index -> x'),
+                    (layer(in_channels, hidden_channels[i]), 'x, edge_index -> x'),
                     activation
                 ]
             else:
                 self.layers.extend([
-                    (layer(hidden_channels[i-1], hidden_channels[i], add_self_loops=False), 'x, edge_index -> x'),
+                    (layer(hidden_channels[i-1], hidden_channels[i]), 'x, edge_index -> x'),
                     activation
                 ])
             if batch_norm:
@@ -48,7 +48,7 @@ class BaseLPModel(L.LightningModule):
                 )
             
         self.layers.append(
-            (layer(hidden_channels[-1], out_channels, add_self_loops=False), 'x, edge_index -> x')
+            (layer(hidden_channels[-1], out_channels), 'x, edge_index -> x')
         )
         
         self.layers = to_hetero(Sequential('x, edge_index', self.layers), metadata)
@@ -131,34 +131,6 @@ class BaseLPModel(L.LightningModule):
         self.log(f'{self.edge_type[1]}_val_f1_score', f1, batch_size=self.val_batch_size)
         
 
-
-class GCN(BaseLPModel):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        hidden_channels: list,
-        metadata,
-        improved=False,
-        batch_norm=False,
-        drop_out=0.2,
-        activation=nn.ReLU(),
-        **kwargs
-    ):
-        layer = partial(GCNConv, improved=improved)
-        super(GCN, self).__init__(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            hidden_channels=hidden_channels,
-            metadata=metadata,
-            layer=layer,
-            batch_norm=batch_norm,
-            drop_out=drop_out,
-            activation=activation,
-            **kwargs
-        )
-
-
 class GraphSAGE(BaseLPModel):
     def __init__(
         self,
@@ -186,6 +158,34 @@ class GraphSAGE(BaseLPModel):
         )
 
 
+class GAT(BaseLPModel):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hidden_channels: list,
+        metadata,
+        num_heads=1,
+        concat=True,
+        batch_norm=False,
+        drop_out=0.2,
+        activation=nn.ReLU(),
+        **kwargs
+    ):
+        layer = partial(GATConv, heads=num_heads, concat=concat, add_self_loops=False)
+        super(GAT, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            hidden_channels=hidden_channels,
+            metadata=metadata,
+            layer=layer,
+            batch_norm=batch_norm,
+            drop_out=drop_out,
+            activation=activation,
+            **kwargs
+        )
+        
+        
 class GATv2(BaseLPModel):
     def __init__(
         self,
@@ -200,7 +200,7 @@ class GATv2(BaseLPModel):
         activation=nn.ReLU(),
         **kwargs
     ):
-        layer = partial(GATv2Conv, heads=num_heads, concat=concat)
+        layer = partial(GATv2Conv, heads=num_heads, concat=concat, add_self_loops=False)
         super(GATv2, self).__init__(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -213,6 +213,32 @@ class GATv2(BaseLPModel):
             **kwargs
         )
 
-
-
-    
+class MetaPath(BaseLPModel):
+    def __init__(
+        self,
+        edge_index_dict,
+        embedding_dim,
+        metapath,
+        walk_length,
+        context_size,
+        walks_per_node,
+        num_negative_samples,
+        num_node_dict
+    ):
+        self.layers = torch_geometric.nn.MetaPath2Vec(
+            edge_index_dict=edge_index_dict,
+            embedding_dim=embedding_dim,
+            metapath=metapath,
+            walk_length=walk_length,
+            context_size=context_size,
+            walks_per_node=walks_per_node,
+            num_negative_samples=num_negative_samples,
+            num_node_dict=num_node_dict,
+        )
+        
+        self.set_optimizer(optim)
+        self.set_criteria(crit)
+        
+        
+    def encode(self, x_dict):
+        for key
