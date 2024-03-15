@@ -31,7 +31,7 @@ def getHiveDataset(
         ['Type', 'Total vote'], axis=1
     ).fillna(0)
     
-    l_node_df = node_df.loc[node_df.Type == "Link", ['ID', 'Total vote']]
+    l_node_df = node_df.loc[node_df.Type == "Link", ['ID', 'Total vote', 'Abnormally']]
     l_node_df['Total vote'] = pd.to_numeric(l_node_df['Total vote']).fillna(0)
 
     # split edge type
