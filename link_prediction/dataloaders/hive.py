@@ -69,19 +69,16 @@ def getHiveDataset(
             ul_edge_df.loc[ul_edge_df.Type==type]['Target'].values
         ], axis=0)
         
-        if type in ['Post', 'Comment']:
-            edge_attr = ul_edge_df.loc[ul_edge_df.Type==type, ['TimeDifference']].values
-        else:
-            edge_attr = np.stack([
-                ul_edge_df.loc[ul_edge_df.Type==type] ['Interaction_Strength'].values,
-                ul_edge_df.loc[ul_edge_df.Type==type] ['TimeDifference'].values
-            ], axis=1)
+        edge_attr = np.stack([
+            ul_edge_df.loc[ul_edge_df.Type==type] ['Interaction_Strength'].values,
+            ul_edge_df.loc[ul_edge_df.Type==type] ['TimeDifference'].values
+        ], axis=1)
 
         edge_label = pd.to_numeric(ul_edge_df.loc[ul_edge_df.Type==type]['Abnormally'].replace({True:1, False:0})).fillna(0).values
 
         
         data['user', type.lower(), 'link']= {
-            'edge_index': torch.from_numpy(edge_id).int(),
+            'edge_index': torch.from_numpy(edge_id).long(),
             'edge_attr': torch.from_numpy(edge_attr).float(),
             'y': torch.from_numpy(edge_label).long()
         }
