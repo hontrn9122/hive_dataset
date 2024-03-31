@@ -212,33 +212,3 @@ class GATv2(BaseLPModel):
             activation=activation,
             **kwargs
         )
-
-class MetaPath(BaseLPModel):
-    def __init__(
-        self,
-        edge_index_dict,
-        embedding_dim,
-        metapath,
-        walk_length,
-        context_size,
-        walks_per_node,
-        num_negative_samples,
-        num_node_dict
-    ):
-        self.layers = torch_geometric.nn.MetaPath2Vec(
-            edge_index_dict=edge_index_dict,
-            embedding_dim=embedding_dim,
-            metapath=metapath,
-            walk_length=walk_length,
-            context_size=context_size,
-            walks_per_node=walks_per_node,
-            num_negative_samples=num_negative_samples,
-            num_node_dict=num_node_dict,
-        )
-        
-        self.set_optimizer(optim)
-        self.set_criteria(crit)
-        
-        
-    def encode(self, x_dict):
-        for key
