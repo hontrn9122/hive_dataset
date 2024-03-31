@@ -33,19 +33,18 @@ def getHiveDataset(
             print("[Warning] This node data has other types than 'User', 'Post' and 'Comment', which is curently not supported and will be ignored while processing!")
             continue
         t = t.lower()
-        node_types.append(t)
+        idx[t] = nodes.ID.to_list()
+        idx_map[t] = {k:v for v, k in enumerate(idx[t])}
         data[t] = {
             'x': torch.tensor(nodes.drop(['ID', 'Abnormally'], axis=1).values).float(),
             'y': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({'True':'1', 'False':'0'})).values)
         }
-        idx[t] = nodes.ID.to_list()
-        idx_map[t] = {k:v for v, k in enumerate(idx[t])}
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Extract edges >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
     for t in edge_df.Type.unique():
-        edges = edge_df.loc[edge_df.Type == t].drop('Type', axis=1)
+        edge_type = edge_df.loc[edge_df.Type == t].drop('Type', axis=1)
         if t == "Belong_to":
             source_target = (
                 ('comment', 'comment'),
@@ -57,13 +56,13 @@ def getHiveDataset(
                 ('user', 'post'),
             )
         for source, target in source_target:
-            edges.loc[edges.Source.isin(idx[source]) & edges.Target.isin(idx[target])]
-            edges.replace({"Source": idx_map[source], "Target": idx_map[target]})
+            edges = edge_type.loc[edge_type.Source.isin(idx[source]) & edge_type.Target.isin(idx[target])]
+            edges = edges.replace({"Source": idx_map[source], "Target": idx_map[target]})
             edge_idx = np.stack([
                 edges['Source'].values,
                 edges['Target'].values
             ], axis=0)
-            edge_attr = np.array(np.array(edges.Weight))
+            edge_attr = np.array(edges.Weight)
     
             edge_label = pd.to_numeric(edges['Abnormally'].replace({'True':'1', 'False':'0'})).values
 
