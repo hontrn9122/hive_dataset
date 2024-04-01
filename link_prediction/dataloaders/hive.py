@@ -37,7 +37,7 @@ def getHiveDataset(
         idx_map[t] = {k:v for v, k in enumerate(idx[t])}
         data[t] = {
             'x': torch.tensor(nodes.drop(['ID', 'Abnormally'], axis=1).values).float(),
-            'y': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({'True':'1', 'False':'0'})).values)
+            'y': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({True:'1', False:'0'})).values)
         }
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,7 +64,7 @@ def getHiveDataset(
             ], axis=0)
             edge_attr = np.array(edges.Weight)
     
-            edge_label = pd.to_numeric(edges['Abnormally'].replace({'True':'1', 'False':'0'})).values
+            edge_label = pd.to_numeric(edges['Abnormally'].replace({True:'1', False:'0'})).values
 
 
             data[source, t.lower(), target]= {
