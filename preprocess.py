@@ -8,7 +8,8 @@ from torch_geometric.data import HeteroData
 def hive_preprocessing(
     nodes_file,
     edges_file,
-    out_dir = 'hive.pt'
+    to_undirected = False,
+    out_file = None,
 ):
     '''
     This function imports the dataset from csv file and preprocess it to make a Pytorch Geometric HeteroData object and save to given directory.
@@ -82,10 +83,15 @@ def hive_preprocessing(
                 'edge_attr': torch.from_numpy(edge_attr).float().view(-1,1),
                 'y': torch.from_numpy(edge_label).long()
             }
+
+    data = HeteroData.from_dict(data)
+    if to_undirected:
+        data = T.ToUndirected(merge=False)(data)
+    
     if out_file is not None:
         torch.save(data, out_file)
     
-    return HeteroData.from_dict(data)
+    return data
 
 
 
