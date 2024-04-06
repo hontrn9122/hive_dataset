@@ -5,7 +5,7 @@ from functools import partial
 
 from sklearn.metrics import roc_auc_score, f1_score, accuracy_score, precision_score, recall_score
 
-from torch_geometric.nn import Sequential, SAGEConv, GATConv, GATv2Conv, to_hetero, HGTConv
+from torch_geometric.nn import Sequential, SAGEConv, GATConv, GATv2Conv, to_hetero, HGTConv, GraphConv
 
 import lightning as L
 
@@ -114,7 +114,7 @@ class BaseLPModel(BaseModel):
         pred, label = self.forward_trainval(data, key, edge_types)
         
         # loss calculation
-        loss = self.crit(pred, label)
+        loss = self.crit(pred, label.float())
         
         # log training loss
         self.log(f'train_loss', loss.item(), batch_size=1)
@@ -128,7 +128,7 @@ class BaseLPModel(BaseModel):
         pred, label = self.forward_trainval(data, key, edge_types)
         
         # loss calculation
-        loss = self.crit(pred, label)
+        loss = self.crit(pred, label.float())
 
         # metrics calculation
         metrics = self.metrics_cal(pred, label)
@@ -150,6 +150,41 @@ class BaseLPModel(BaseModel):
         metrics['val_accuracy'] = accuracy_score(label, pred.round())
         return metrics
         
+        
+class GraphConvNet(BaseLPModel):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hidden_channels: list,
+        metadata,
+        edge_types,
+        rev_edge_types,
+        aggr_scheme='mean',
+        batch_norm=False,
+        drop_out=0.2,
+        activation=nn.ReLU(),
+        optim=None,
+        crit=None,
+        **kwargs
+    ):
+        layer = partial(GraphConv, aggr=aggr_scheme)
+        super(GraphConvNet, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            hidden_channels=hidden_channels,
+            metadata=metadata,
+            layer=layer,
+            edge_types=edge_types,
+            rev_edge_types=rev_edge_types,
+            batch_norm=batch_norm,
+            drop_out=drop_out,
+            activation=activation,
+            optim=optim,
+            crit=crit,
+            **kwargs
+        )        
+
 
 class GraphSAGE(BaseLPModel):
     def __init__(
@@ -180,6 +215,8 @@ class GraphSAGE(BaseLPModel):
             batch_norm=batch_norm,
             drop_out=drop_out,
             activation=activation,
+            optim=optim,
+            crit=crit,
             **kwargs
         )
 
@@ -214,6 +251,8 @@ class GAT(BaseLPModel):
             batch_norm=batch_norm,
             drop_out=drop_out,
             activation=activation,
+            optim=optim,
+            crit=crit,
             **kwargs
         )
         
@@ -248,6 +287,8 @@ class GATv2(BaseLPModel):
             batch_norm=batch_norm,
             drop_out=drop_out,
             activation=activation,
+            optim=optim,
+            crit=crit,
             **kwargs
         )
         

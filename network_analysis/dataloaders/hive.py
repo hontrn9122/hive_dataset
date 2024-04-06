@@ -36,7 +36,7 @@ def getHiveDataset(
         node_types.append(t)
         data[t] = {
             'x': torch.tensor(nodes.drop(['ID', 'Abnormally'], axis=1).values).float(),
-            'y': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({'True':'1', 'False':'0'})).values)
+            'node_label': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({'True':'1', 'False':'0'})).values)
         }
         idx[t] = nodes.ID.to_list()
         idx_map[t] = {k:v for v, k in enumerate(idx[t])}

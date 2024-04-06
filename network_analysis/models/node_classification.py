@@ -5,7 +5,7 @@ from functools import partial
 
 from sklearn.metrics import roc_auc_score, f1_score, accuracy_score, precision_score, recall_score
 
-from torch_geometric.nn import Sequential, SAGEConv, GATConv, GATv2Conv, to_hetero, HGTConv
+from torch_geometric.nn import Sequential, SAGEConv, GATConv, GATv2Conv, to_hetero, HGTConv, GraphConv
 
 import lightning as L
 
@@ -86,7 +86,7 @@ class BaseCDModel(BaseModel):
         z = self.encoder(data.x_dict, data.edge_index_dict)
         for node_type, mask in zip(node_types, masks):
             preds.append(self.mlp[node_type](z[node_type][mask]))
-            labels.append(data[node_type]['y'][mask])
+            labels.append(data[node_type]['node_label'][mask])
         return torch.cat(preds).squeeze(-1), torch.cat(labels)
     
     def training_step(self, train_batch, batch_idx):
@@ -132,6 +132,39 @@ class BaseCDModel(BaseModel):
         return metrics
         
 
+class GraphConvNet(BaseCDModel):
+    def __init__(
+        self,
+        in_channels: int,
+        hidden_channels: list,
+        metadata,
+        edge_types,
+        rev_edge_types,
+        aggr_scheme='mean',
+        batch_norm=False,
+        drop_out=0.2,
+        activation=nn.ReLU(),
+        optim=None,
+        crit=None,
+        **kwargs
+    ):
+        layer = partial(GraphConv, aggr=aggr_scheme)
+        super(GraphConvNet, self).__init__(
+            in_channels=in_channels,
+            hidden_channels=hidden_channels,
+            metadata=metadata,
+            layer=layer,
+            edge_types=edge_types,
+            rev_edge_types=rev_edge_types,
+            batch_norm=batch_norm,
+            drop_out=drop_out,
+            activation=activation,
+            optim=optim,
+            crit=crit,
+            **kwargs
+        )
+        
+        
 class GraphSAGE(BaseCDModel):
     def __init__(
         self,

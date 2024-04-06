@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import numpy as np
 from torch_geometric.data import HeteroData
+import torch_geometric.transforms as T
 
 
 def hive_preprocessing(
@@ -48,7 +49,7 @@ def hive_preprocessing(
         idx_map[t] = {k:v for v, k in enumerate(idx[t])}
         data[t] = {
             'x': torch.tensor(nodes.drop(['ID', 'Abnormally'], axis=1).values).float(),
-            'y': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({True:'1', False:'0'})).values)
+            'node_label': torch.tensor(pd.to_numeric(nodes['Abnormally'].replace({True:'1', False:'0'})).values).long()
         }
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
