@@ -1,10 +1,8 @@
 # Network Analysis for Hive Dataset - Blockchain Social Networks
 
-This repo contains the official network analysis code for the dataset in "..." (link).
+This repo contains the official network analysis code for the dataset in "Anomaly Behavior Analysis for Blockchain Social Networks Using Heterogeneous Graph Neural Networks".
 
 ## Description
-
-(Dataset description). 
 
 This repo contains the models and experiment notebooks for three tasks of network analysis:
 - Node classification (Node anomaly detection)
